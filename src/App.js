@@ -282,7 +282,7 @@ function App() {
     console.log("succesfully updated custom fields", submittedData);
     
     alert("Data successfully updated");
-    alert(message);
+  //  alert(message);
   };
 
 
