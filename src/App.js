@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./App.css";
 
 
+
 const options = {
   ticketTypes: ["Product", "LoadPlan", "Claims", "Reservation", "Customer Operation"],
   productsByTicketType: {
@@ -227,7 +228,10 @@ const options = {
   }
 };
 
+const { YAppWidget } = await import("https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js");
+let yAppWidget = new YAppWidget();
 function App() {
+
   const [ticketType, setTicketType] = useState("");
   const [product, setProduct] = useState("");
   const [classification, setClassification] = useState("");
@@ -259,15 +263,28 @@ function App() {
   const showSubClassificationDropdown = subClassificationOptions.length > 0;
   const showDetailsDropdown = detailOptions.length > 0;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async(e) => {
     e.preventDefault();
     let message = `Submitted ticket for: ${ticketType}`;
     if (product) message += ` > ${product}`;
     if (classification) message += ` > ${classification}`;
     if (subClassification) message += ` > ${subClassification}`;
     if (details) message += ` > ${details}`;
-    alert(message);
+    let modifiedCustomFields = {
+      s1: ticketType || "NA",
+      s2: product || "NA",
+      s3: classification || "NA",
+      s4: subClassification || "NA",
+      s5: details || "NA"
+    };
+    const submittedData = await yAppWidget.update("update_custom_fields", modifiedCustomFields);
+
+    console.log("succesfully updated custom fields", submittedData);
+    
+    alert("Data successfully updated");
+  //  alert(message);
   };
+
 
   return (
     <div className="form-container">
