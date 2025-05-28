@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef ,useState } from "react";
 import "./App.css";
 
 
@@ -228,9 +228,28 @@ const options = {
   }
 };
 
-const { YAppWidget } = await import("https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js");
-let yAppWidget = new YAppWidget();
+// const { YAppWidget } = await import("https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js");
+// let yAppWidget = new YAppWidget();
 function App() {
+  
+  
+  const yAppWidgetRef = useRef(null);
+
+  useEffect(() => {
+    const loadScript = async () => {
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+      script.async = true;
+      script.onload = () => {
+        const { YAppWidget } = window;
+        yAppWidgetRef.current = new YAppWidget();
+      };
+      document.body.appendChild(script);
+    };
+
+    loadScript();
+  }, []);
 
   const [ticketType, setTicketType] = useState("");
   const [product, setProduct] = useState("");
@@ -263,29 +282,47 @@ function App() {
   const showSubClassificationDropdown = subClassificationOptions.length > 0;
   const showDetailsDropdown = detailOptions.length > 0;
 
-  const handleSubmit = async(e) => {
+  // const handleSubmit = async(e) => {
+  //   e.preventDefault();
+  //   let message = `Submitted ticket for: ${ticketType}`;
+  //   if (product) message += ` > ${product}`;
+  //   if (classification) message += ` > ${classification}`;
+  //   if (subClassification) message += ` > ${subClassification}`;
+  //   if (details) message += ` > ${details}`;
+  //   let modifiedCustomFields = {
+  //     s1: ticketType || "NA",
+  //     s2: product || "NA",
+  //     s3: classification || "NA",
+  //     s4: subClassification || "NA",
+  //     s5: details || "NA"
+  //   };
+  //   const submittedData = await yAppWidget.update("update_custom_fields", modifiedCustomFields);
+
+  //   console.log("succesfully updated custom fields", submittedData);
+    
+  //   alert("Data successfully updated");
+  // //  alert(message);
+  // };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    let message = `Submitted ticket for: ${ticketType}`;
-    if (product) message += ` > ${product}`;
-    if (classification) message += ` > ${classification}`;
-    if (subClassification) message += ` > ${subClassification}`;
-    if (details) message += ` > ${details}`;
+  
     let modifiedCustomFields = {
       s1: ticketType || "NA",
       s2: product || "NA",
       s3: classification || "NA",
       s4: subClassification || "NA",
-      s5: details || "NA"
+      s5: details || "NA",
     };
-    const submittedData = await yAppWidget.update("update_custom_fields", modifiedCustomFields);
-
-    console.log("succesfully updated custom fields", submittedData);
-    
-    alert("Data successfully updated");
-  //  alert(message);
+  
+    if (yAppWidgetRef.current) {
+      const submittedData = await yAppWidgetRef.current.update("update_custom_fields", modifiedCustomFields);
+      console.log("Successfully updated custom fields", submittedData);
+      alert("Data successfully updated");
+    } else {
+      alert("Widget not loaded yet.");
+    }
   };
-
-
   return (
     <div className="form-container">
       <h2>Custom Fields</h2>
