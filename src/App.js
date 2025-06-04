@@ -312,7 +312,7 @@ function App() {
       s2: product || "NA",
       s3: classification || "NA",
       s4: subClassification || "NA",
-      s5: details || "NA",
+      s6: details || "NA",
     };
   
     if (yAppWidgetRef.current) {
