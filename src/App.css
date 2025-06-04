@@ -12,7 +12,8 @@ body {
 
 .form-container {
   background-color: white;
-  width: 400px; /* Fixed width */
+  width: 100%;
+  max-width: 400px; /* Limit max width for large screens */
   padding: 30px 25px;
   border-radius: 15px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.1);
@@ -20,30 +21,39 @@ body {
   box-sizing: border-box;
 }
 
+/* Heading */
 h2 {
   margin-bottom: 20px;
   font-weight: 700;
+  font-size: 20px;
+  color: #333;
 }
 
+/* Label styling */
 label {
   display: block;
   margin-bottom: 8px;
   font-weight: bold;
+  font-size: 14px;
+  color: #444;
 }
 
+/* Dropdowns */
 select {
   width: 100%;
   padding: 10px;
-  font-size: 16px;
-  border-radius: 5px;
+  font-size: 15px;
+  border-radius: 6px;
   border: 1px solid #ccc;
   margin-bottom: 20px;
   box-sizing: border-box;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
+  background-color: white;
 }
 
+/* Button */
 button {
   background-color: #ff6600;
   color: white;
@@ -54,8 +64,31 @@ button {
   border: none;
   border-radius: 10px;
   cursor: pointer;
+  transition: background-color 0.3s ease;
 }
 
 button:hover {
   background-color: #e65500;
+}
+
+/* Responsive behavior for smaller screens */
+@media (max-width: 768px) {
+  body {
+    padding: 40px 20px;
+    justify-content: center; /* Center on small screens */
+  }
+
+  .form-container {
+    width: 100%;
+    max-width: 100%;
+    padding: 25px 20px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  select, button {
+    font-size: 15px;
+  }
 }
