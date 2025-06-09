@@ -308,11 +308,11 @@ function App() {
     e.preventDefault();
   
     let modifiedCustomFields = {
-      s1: ticketType || "NA",
-      s2: product || "NA",
-      s3: classification || "NA",
-      s4: subClassification || "NA",
-      s6: details || "NA",
+      s6: ticketType || "NA",
+      s7: product || "NA",
+      s8: classification || "NA",
+      s9: subClassification || "NA",
+      s10: details || "NA",
     };
   
     if (yAppWidgetRef.current) {
