@@ -878,11 +878,11 @@ function App() {
       ? options.classificationsByProduct[product] || []
       : [];
 
-  const subClassificationKey = ${ticketType}_${product}_${classification};
+  const subClassificationKey = `${ticketType}_${product}_${classification}`;
   const subClassificationOptions =
     options.subClassifications[subClassificationKey] || [];
 
-  const detailKey = ${ticketType}_${product}_${classification}_${subClassification};
+  const detailKey = `${ticketType}_${product}_${classification}_${subClassification}`;
   const detailOptions = options.details[detailKey] || [];
 
   const showProductDropdown =
