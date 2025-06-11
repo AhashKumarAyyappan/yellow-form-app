@@ -952,9 +952,34 @@ function App() {
   const showSubClassificationDropdown = subClassificationOptions.length > 0;
   const showDetailsDropdown = detailOptions.length > 0;
 
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+
+  //   const modifiedCustomFields = {
+  //     s6: ticketType || "NA",
+  //     s7: product || "NA",
+  //     s8: classification || "NA",
+  //     s9: subClassification || "NA",
+  //     s10: details || "NA",
+  //   };
+
+  //   console.log("Submitting updated custom fields:", modifiedCustomFields);
+
+  //   if (yAppWidgetRef.current) {
+  //     try {
+  //       await yAppWidgetRef.current.updateTicketCF(modifiedCustomFields);
+  //       alert("Custom fields successfully updated.");
+  //     } catch (err) {
+  //       console.error("Update failed:", err);
+  //       alert("Update failed.");
+  //     }
+  //   } else {
+  //     alert("Widget not loaded yet.");
+  //   }
+  // };
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     const modifiedCustomFields = {
       s6: ticketType || "NA",
       s7: product || "NA",
@@ -962,12 +987,16 @@ function App() {
       s9: subClassification || "NA",
       s10: details || "NA",
     };
-
+  
     console.log("Submitting updated custom fields:", modifiedCustomFields);
-
+  
     if (yAppWidgetRef.current) {
       try {
-        await yAppWidgetRef.current.updateTicketCF(modifiedCustomFields);
+        const result = await yAppWidgetRef.current.update(
+          "update_custom_fields",
+          modifiedCustomFields
+        );
+        console.log("Successfully updated via .update():", result);
         alert("Custom fields successfully updated.");
       } catch (err) {
         console.error("Update failed:", err);
@@ -977,7 +1006,6 @@ function App() {
       alert("Widget not loaded yet.");
     }
   };
-
   return (
     <div className="form-container">
       <h2>Custom Fields</h2>
