@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
+
 import "./App.css";
 
 function App() {
   const yAppWidgetRef = useRef(null);
-
   const [options, setOptions] = useState({
     ticketTypes: [
       "Product",
@@ -825,73 +825,52 @@ function App() {
   const [subClassification, setSubClassification] = useState("");
   const [details, setDetails] = useState("");
 
-  // Load Yellow Messenger widget script and fetch ticket info
   // useEffect(() => {
-  //   const loadScriptAndFetch = async () => {
+  //   const loadWidgetAndFetchData = () => {
   //     const script = document.createElement("script");
-  //     script.type = "text/javascript";
-  //     script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
-  //     script.async = true;
+  //     script.type = "module";
+  //     script.innerHTML = `
+  //       import { YAppWidget } from "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+  //       window.YellowAppWidgetInstance = new YAppWidget();
+  //       window.YellowAppWidgetInstance.getTicketCF().then(data => {
+  //         window.YellowAppWidgetData = data;
+  //       }).catch(err => {
+  //         window.YellowAppWidgetError = err;
+  //       });
+  //     `;
+  //     document.body.appendChild(script);
 
-  //     script.onload = async () => {
-  //       const { YAppWidget } = window;
-  //       const widget = new YAppWidget();
-  //       yAppWidgetRef.current = widget;
+  //     const interval = setInterval(() => {
+  //       if (window.YellowAppWidgetData) {
+  //         const customFields = window.YellowAppWidgetData || {};
 
-  //       try {
-  //         const data = await widget.ask("ask_ticket_cf_info");
-  //         console.log("Fetched ticket info:", data);
-
-  //         const customFields =
-  //           data?.eventResponse?.eventData?.customFields || {};
-
-  //         // Assume this is how the structure comes — you may need to modify this structure to match actual payload
   //         setOptions({
   //           ticketTypes: customFields.ticketTypes || [],
   //           productsByTicketType: customFields.productsByTicketType || {},
-  //           classificationsByProduct:
-  //             customFields.classificationsByProduct || {},
+  //           classificationsByProduct: customFields.classificationsByProduct || {},
   //           subClassifications: customFields.subClassifications || {},
   //           details: customFields.details || {},
   //         });
-  //       } catch (error) {
-  //         console.error("Error fetching ticket info:", error);
+
+  //         yAppWidgetRef.current = window.YellowAppWidgetInstance;
+
+  //         clearInterval(interval);
+  //         clearTimeout(timeout);
   //       }
-  //     };
 
-  //     document.body.appendChild(script);
+  //       if (window.YellowAppWidgetError) {
+  //         console.error("Error loading YellowAppWidget:", window.YellowAppWidgetError);
+  //         clearInterval(interval);
+  //         clearTimeout(timeout);
+  //       }
+  //     }, 500);
+
+  //     const timeout = setTimeout(() => {
+  //       console.error("Timeout loading YellowAppWidget data");
+  //       clearInterval(interval);
+  //     }, 10000);
   //   };
 
-  //   loadScriptAndFetch();
-  // }, []);
-  // useEffect(() => {
-  //   const loadWidgetAndFetchData = async () => {
-  //     try {
-  //       const { YAppWidget } = await import(
-  //         "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js"
-  //       );
-  
-  //       const widget = new YAppWidget();
-  //       yAppWidgetRef.current = widget;
-  
-  //       const data = await widget.ask("ask_ticket_cf_info");
-  //       console.log("Fetched ticket info:", data);
-  
-  //       const customFields = data?.eventResponse?.eventData?.customFields || {};
-  
-  //       setOptions({
-  //         ticketTypes: customFields.ticketTypes || [],
-  //         productsByTicketType: customFields.productsByTicketType || {},
-  //         classificationsByProduct: customFields.classificationsByProduct || {},
-  //         subClassifications: customFields.subClassifications || {},
-  //         details: customFields.details || {},
-  //       });
-  
-  //     } catch (err) {
-  //       console.error("Error loading or fetching from Yellow.ai widget:", err);
-  //     }
-  //   };
-  
   //   loadWidgetAndFetchData();
   // }, []);
   useEffect(() => {
@@ -902,16 +881,17 @@ function App() {
       script.innerHTML = `
         import { YAppWidget } from "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
         window.YellowAppWidgetInstance = new YAppWidget();
-        window.YellowAppWidgetInstance.ask("ask_ticket_cf_info").then(data => {
-          window.YellowAppWidgetData = data;
-        }).catch(err => {
-          console.error("Widget ask error:", err);
-          window.YellowAppWidgetError = err;
-        });
+        window.YellowAppWidgetInstance.ask("ask_ticket_cf_info")
+          .then(data => {
+            window.YellowAppWidgetData = data;
+          })
+          .catch(err => {
+            console.error("Widget ask error:", err);
+            window.YellowAppWidgetError = err;
+          });
       `;
       document.body.appendChild(script);
   
-      // Poll every 500ms for the fetched data
       const interval = setInterval(() => {
         if (window.YellowAppWidgetData) {
           const data = window.YellowAppWidgetData;
@@ -938,7 +918,6 @@ function App() {
         }
       }, 500);
   
-      // Timeout after 10 seconds to avoid infinite loop
       const timeout = setTimeout(() => {
         console.error("Timed out waiting for YellowAppWidget data");
         clearInterval(interval);
@@ -984,19 +963,15 @@ function App() {
       s10: details || "NA",
     };
 
-    console.log("Submitting these custom fields new:", modifiedCustomFields);
+    console.log("Submitting updated custom fields:", modifiedCustomFields);
 
     if (yAppWidgetRef.current) {
       try {
-        const submittedData = await yAppWidgetRef.current.update(
-          "update_custom_fields",
-          modifiedCustomFields
-        );
-        console.log("Successfully updated custom fields", submittedData);
-        alert("Data successfully updated");
+        await yAppWidgetRef.current.updateTicketCF(modifiedCustomFields);
+        alert("Custom fields successfully updated.");
       } catch (err) {
-        console.error("Update failed", err);
-        alert("Update failed");
+        console.error("Update failed:", err);
+        alert("Update failed.");
       }
     } else {
       alert("Widget not loaded yet.");
@@ -1007,7 +982,6 @@ function App() {
     <div className="form-container">
       <h2>Custom Fields</h2>
       <form onSubmit={handleSubmit}>
-        {/* Ticket Type */}
         <label htmlFor="ticketType">Ticket Type *</label>
         <select
           id="ticketType"
@@ -1032,7 +1006,6 @@ function App() {
           ))}
         </select>
 
-        {/* Product */}
         {showProductDropdown && (
           <>
             <label htmlFor="product">Product *</label>
@@ -1056,7 +1029,6 @@ function App() {
           </>
         )}
 
-        {/* Classification */}
         {showClassificationDropdown && (
           <>
             <label htmlFor="classification">Classification *</label>
@@ -1079,7 +1051,6 @@ function App() {
           </>
         )}
 
-        {/* SubClassification */}
         {showSubClassificationDropdown && (
           <>
             <label htmlFor="subClassification">Subclassification *</label>
@@ -1101,7 +1072,6 @@ function App() {
           </>
         )}
 
-        {/* Details */}
         {showDetailsDropdown && (
           <>
             <label htmlFor="details">Details *</label>
