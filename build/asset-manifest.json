@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/yellow-form-app/static/css/main.92cbf496.css",
-    "main.js": "/yellow-form-app/static/js/main.9184242f.js",
+    "main.js": "/yellow-form-app/static/js/main.120bfb48.js",
     "static/js/453.9fc07ff4.chunk.js": "/yellow-form-app/static/js/453.9fc07ff4.chunk.js",
     "index.html": "/yellow-form-app/index.html",
     "main.92cbf496.css.map": "/yellow-form-app/static/css/main.92cbf496.css.map",
-    "main.9184242f.js.map": "/yellow-form-app/static/js/main.9184242f.js.map",
+    "main.120bfb48.js.map": "/yellow-form-app/static/js/main.120bfb48.js.map",
     "453.9fc07ff4.chunk.js.map": "/yellow-form-app/static/js/453.9fc07ff4.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.92cbf496.css",
-    "static/js/main.9184242f.js"
+    "static/js/main.120bfb48.js"
   ]
 }

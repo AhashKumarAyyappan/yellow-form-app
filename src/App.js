@@ -1,8 +1,10 @@
+
 import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
 
 function App() {
   const yAppWidgetRef = useRef(null);
+  const [isWidgetReady, setIsWidgetReady] = useState(false);
 
   const [options, setOptions] = useState({
     ticketTypes: [
@@ -826,53 +828,53 @@ function App() {
   const [details, setDetails] = useState("");
 
   useEffect(() => {
-    const loadScriptAndFetch = async () => {
+    const loadScriptAndInitializeWidget = async () => {
+      if (window.YAppWidget) {
+        initializeWidget();
+        return;
+      }
+
       const script = document.createElement("script");
       script.type = "text/javascript";
       script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
       script.async = true;
+      document.body.appendChild(script);
 
-      script.onload = async () => {
-        // Wait until window.YAppWidget is defined
-        const waitForWidget = () =>
-          new Promise((resolve) => {
-            if (window.YAppWidget) return resolve(window.YAppWidget);
-            const interval = setInterval(() => {
-              if (window.YAppWidget) {
-                clearInterval(interval);
-                resolve(window.YAppWidget);
-              }
-            }, 100);
-          });
-
-        const YAppWidget = await waitForWidget();
-        const widget = new YAppWidget();
-        yAppWidgetRef.current = widget;
-
-        try {
-          const data = await widget.ask("ask_ticket_cf_info");
-          console.log("Fetched ticket info now:", data);
-
-          const customFields =
-            data?.eventResponse?.eventData?.customFields || {};
-
-          setOptions({
-            ticketTypes: customFields.ticketTypes || [],
-            productsByTicketType: customFields.productsByTicketType || {},
-            classificationsByProduct:
-              customFields.classificationsByProduct || {},
-            subClassifications: customFields.subClassifications || {},
-            details: customFields.details || {},
-          });
-        } catch (error) {
-          console.error("Error fetching ticket info:", error);
-        }
+      script.onload = () => {
+        initializeWidget();
       };
 
-      document.body.appendChild(script);
+      script.onerror = () => {
+        console.error("Failed to load Yellow.ai SDK");
+        alert("Failed to load Yellow.ai widget");
+      };
     };
 
-    loadScriptAndFetch();
+    const initializeWidget = async () => {
+      try {
+        const YAppWidget = window.YAppWidget;
+        const widget = new YAppWidget();
+        yAppWidgetRef.current = widget;
+        setIsWidgetReady(true);
+
+        const data = await widget.ask("ask_ticket_cf_info");
+        console.log("Fetched ticket info:", data);
+
+        const customFields = data?.eventResponse?.eventData?.customFields || {};
+
+        setOptions({
+          ticketTypes: customFields.ticketTypes || [],
+          productsByTicketType: customFields.productsByTicketType || {},
+          classificationsByProduct: customFields.classificationsByProduct || {},
+          subClassifications: customFields.subClassifications || {},
+          details: customFields.details || {},
+        });
+      } catch (error) {
+        console.error("Error initializing widget:", error);
+      }
+    };
+
+    loadScriptAndInitializeWidget();
   }, []);
 
   const productOptions =
@@ -894,12 +896,6 @@ function App() {
   const detailKey = `${ticketType}_${product}_${classification}_${subClassification}`;
   const detailOptions = options.details[detailKey] || [];
 
-  const showProductDropdown =
-    ticketType && ticketType !== "LoadPlan" && productOptions.length > 0;
-  const showClassificationDropdown = classificationOptions.length > 0;
-  const showSubClassificationDropdown = subClassificationOptions.length > 0;
-  const showDetailsDropdown = detailOptions.length > 0;
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -911,22 +907,23 @@ function App() {
       s10: details || "NA",
     };
 
-    console.log("Submitting these custom fields:", modifiedCustomFields);
+    console.log("Submitting custom fields:", modifiedCustomFields);
 
-    if (yAppWidgetRef.current) {
-      try {
-        const submittedData = await yAppWidgetRef.current.update(
-          "update_custom_fields",
-          modifiedCustomFields
-        );
-        console.log("Successfully updated custom fields", submittedData);
-        alert("Data successfully updated");
-      } catch (err) {
-        console.error("Update failed", err);
-        alert("Update failed");
-      }
-    } else {
-      alert("Widget not loaded yet.");
+    if (!isWidgetReady || !yAppWidgetRef.current) {
+      alert("Widget is not loaded yet.");
+      return;
+    }
+
+    try {
+      const result = await yAppWidgetRef.current.update(
+        "update_custom_fields",
+        modifiedCustomFields
+      );
+      console.log("Update result:", result);
+      alert("Data successfully updated");
+    } catch (err) {
+      console.error("Update failed", err);
+      alert("Update failed");
     }
   };
 
@@ -946,9 +943,7 @@ function App() {
             setClassification("");
             setSubClassification("");
             setDetails("");
-            if (newType === "LoadPlan") {
-              setProduct("LoadPlan");
-            }
+            if (newType === "LoadPlan") setProduct("LoadPlan");
           }}
         >
           <option value="">-- Select --</option>
@@ -960,7 +955,7 @@ function App() {
         </select>
 
         {/* Product */}
-        {showProductDropdown && (
+        {ticketType !== "LoadPlan" && productOptions.length > 0 && (
           <>
             <label htmlFor="product">Product *</label>
             <select
@@ -984,7 +979,7 @@ function App() {
         )}
 
         {/* Classification */}
-        {showClassificationDropdown && (
+        {classificationOptions.length > 0 && (
           <>
             <label htmlFor="classification">Classification *</label>
             <select
@@ -1007,7 +1002,7 @@ function App() {
         )}
 
         {/* SubClassification */}
-        {showSubClassificationDropdown && (
+        {subClassificationOptions.length > 0 && (
           <>
             <label htmlFor="subClassification">Subclassification *</label>
             <select
@@ -1029,7 +1024,7 @@ function App() {
         )}
 
         {/* Details */}
-        {showDetailsDropdown && (
+        {detailOptions.length > 0 && (
           <>
             <label htmlFor="details">Details *</label>
             <select
@@ -1047,7 +1042,9 @@ function App() {
           </>
         )}
 
-        <button type="submit">Submit</button>
+        <button type="submit" disabled={!isWidgetReady}>
+          Submit
+        </button>
       </form>
     </div>
   );
