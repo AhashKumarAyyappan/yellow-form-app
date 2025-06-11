@@ -826,42 +826,91 @@ function App() {
   const [details, setDetails] = useState("");
 
   // Load Yellow Messenger widget script and fetch ticket info
+  // useEffect(() => {
+  //   const loadScriptAndFetch = async () => {
+  //     const script = document.createElement("script");
+  //     script.type = "text/javascript";
+  //     script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+  //     script.async = true;
+
+  //     script.onload = async () => {
+  //       const { YAppWidget } = window;
+  //       const widget = new YAppWidget();
+  //       yAppWidgetRef.current = widget;
+
+  //       try {
+  //         const data = await widget.ask("ask_ticket_cf_info");
+  //         console.log("Fetched ticket info:", data);
+
+  //         const customFields =
+  //           data?.eventResponse?.eventData?.customFields || {};
+
+  //         // Assume this is how the structure comes — you may need to modify this structure to match actual payload
+  //         setOptions({
+  //           ticketTypes: customFields.ticketTypes || [],
+  //           productsByTicketType: customFields.productsByTicketType || {},
+  //           classificationsByProduct:
+  //             customFields.classificationsByProduct || {},
+  //           subClassifications: customFields.subClassifications || {},
+  //           details: customFields.details || {},
+  //         });
+  //       } catch (error) {
+  //         console.error("Error fetching ticket info:", error);
+  //       }
+  //     };
+
+  //     document.body.appendChild(script);
+  //   };
+
+  //   loadScriptAndFetch();
+  // }, []);
   useEffect(() => {
     const loadScriptAndFetch = async () => {
       const script = document.createElement("script");
       script.type = "text/javascript";
-      script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+      script.src = "https://cdn.yellowmessenger.com/widget/v1.0.0/yapp-sdk.min.js";
       script.async = true;
-
-      script.onload = async () => {
-        const { YAppWidget } = window;
-        const widget = new YAppWidget();
-        yAppWidgetRef.current = widget;
-
-        try {
-          const data = await widget.ask("ask_ticket_cf_info");
-          console.log("Fetched ticket info:", data);
-
-          const customFields =
-            data?.eventResponse?.eventData?.customFields || {};
-
-          // Assume this is how the structure comes — you may need to modify this structure to match actual payload
-          setOptions({
-            ticketTypes: customFields.ticketTypes || [],
-            productsByTicketType: customFields.productsByTicketType || {},
-            classificationsByProduct:
-              customFields.classificationsByProduct || {},
-            subClassifications: customFields.subClassifications || {},
-            details: customFields.details || {},
-          });
-        } catch (error) {
-          console.error("Error fetching ticket info:", error);
-        }
+  
+      script.onload = () => {
+        // Wait until YAppWidget is available
+        const checkInterval = setInterval(() => {
+          if (window.YAppWidget) {
+            clearInterval(checkInterval);
+  
+            try {
+              const widget = new window.YAppWidget();
+              yAppWidgetRef.current = widget;
+  
+              widget.ask("ask_ticket_cf_info")
+                .then((data) => {
+                  console.log("Fetched ticket info:", data);
+                  const customFields = data?.eventResponse?.eventData?.customFields || {};
+  
+                  setOptions({
+                    ticketTypes: customFields.ticketTypes || [],
+                    productsByTicketType: customFields.productsByTicketType || {},
+                    classificationsByProduct: customFields.classificationsByProduct || {},
+                    subClassifications: customFields.subClassifications || {},
+                    details: customFields.details || {},
+                  });
+                })
+                .catch((error) => {
+                  console.error("Error fetching ticket info:", error);
+                });
+            } catch (err) {
+              console.error("Failed to instantiate YAppWidget", err);
+            }
+          }
+        }, 100); // check every 100ms
       };
-
+  
+      script.onerror = () => {
+        console.error("Failed to load Yellow.ai widget script.");
+      };
+  
       document.body.appendChild(script);
     };
-
+  
     loadScriptAndFetch();
   }, []);
 
