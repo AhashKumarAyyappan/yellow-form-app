@@ -828,40 +828,19 @@ function App() {
   const [details, setDetails] = useState("");
 
   useEffect(() => {
-    const loadScriptAndInitializeWidget = async () => {
-      if (window.YAppWidget) {
-        initializeWidget();
-        return;
-      }
-
-      const script = document.createElement("script");
-      script.type = "text/javascript";
-      script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
-      script.async = true;
-      document.body.appendChild(script);
-
-      script.onload = () => {
-        initializeWidget();
-      };
-
-      script.onerror = () => {
-        console.error("Failed to load Yellow.ai SDK");
-        alert("Failed to load Yellow.ai widget");
-      };
-    };
-
     const initializeWidget = async () => {
       try {
-        const YAppWidget = window.YAppWidget;
-        const widget = new YAppWidget();
+        const widget = window.YAppWidget;
+        if (!widget) {
+          console.error("YAppWidget is not available");
+          return;
+        }
+  
         yAppWidgetRef.current = widget;
-        setIsWidgetReady(true);
-
+  
         const data = await widget.ask("ask_ticket_cf_info");
-        console.log("Fetched ticket info:", data);
-
         const customFields = data?.eventResponse?.eventData?.customFields || {};
-
+  
         setOptions({
           ticketTypes: customFields.ticketTypes || [],
           productsByTicketType: customFields.productsByTicketType || {},
@@ -869,13 +848,21 @@ function App() {
           subClassifications: customFields.subClassifications || {},
           details: customFields.details || {},
         });
+  
+        setIsWidgetReady(true);
       } catch (error) {
         console.error("Error initializing widget:", error);
       }
     };
-
-    loadScriptAndInitializeWidget();
+  
+    // Only run if the SDK is available
+    if (window.YAppWidget) {
+      initializeWidget();
+    } else {
+      console.error("Yellow.ai widget not found. Are you running inside Yellow.ai?");
+    }
   }, []);
+  
 
   const productOptions =
     ticketType && ticketType !== "LoadPlan"
