@@ -1,6 +1,5 @@
-import React, { useEffect, useRef ,useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import "./App.css";
-
 
 function App() {
   const yAppWidgetRef = useRef(null);
@@ -826,7 +825,6 @@ function App() {
   const [subClassification, setSubClassification] = useState("");
   const [details, setDetails] = useState("");
 
-  // Load Yellow Messenger widget script and fetch ticket info
   useEffect(() => {
     const loadScriptAndFetch = async () => {
       const script = document.createElement("script");
@@ -835,7 +833,19 @@ function App() {
       script.async = true;
 
       script.onload = async () => {
-        const { YAppWidget } = window;
+        // Wait until window.YAppWidget is defined
+        const waitForWidget = () =>
+          new Promise((resolve) => {
+            if (window.YAppWidget) return resolve(window.YAppWidget);
+            const interval = setInterval(() => {
+              if (window.YAppWidget) {
+                clearInterval(interval);
+                resolve(window.YAppWidget);
+              }
+            }, 100);
+          });
+
+        const YAppWidget = await waitForWidget();
         const widget = new YAppWidget();
         yAppWidgetRef.current = widget;
 
@@ -846,7 +856,6 @@ function App() {
           const customFields =
             data?.eventResponse?.eventData?.customFields || {};
 
-          // Assume this is how the structure comes — you may need to modify this structure to match actual payload
           setOptions({
             ticketTypes: customFields.ticketTypes || [],
             productsByTicketType: customFields.productsByTicketType || {},
@@ -875,8 +884,8 @@ function App() {
     ticketType === "LoadPlan"
       ? options.classificationsByProduct["LoadPlan"]
       : product
-      ? options.classificationsByProduct[product] || []
-      : [];
+        ? options.classificationsByProduct[product] || []
+        : [];
 
   const subClassificationKey = `${ticketType}_${product}_${classification}`;
   const subClassificationOptions =
@@ -1044,4 +1053,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;
