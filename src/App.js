@@ -919,7 +919,7 @@ function App() {
         "update_custom_fields",
         modifiedCustomFields
       );
-      console.log("Update result:", result);
+      console.log("Update result new:", result);
       alert("Data successfully updated");
     } catch (err) {
       console.error("Update failed", err);
