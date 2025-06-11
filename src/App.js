@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import "./App.css";
 
 function App() {
   const yAppWidgetRef = useRef(null);
@@ -876,11 +877,11 @@ function App() {
       ? options.classificationsByProduct[product] || []
       : [];
 
-  const subClassificationKey = ${ticketType}_${product}_${classification};
+  const subClassificationKey = `${ticketType}_${product}_${classification}`;
   const subClassificationOptions =
     options.subClassifications[subClassificationKey] || [];
 
-  const detailKey = ${ticketType}_${product}_${classification}_${subClassification};
+  const detailKey = `${ticketType}_${product}_${classification}_${subClassification}`;
   const detailOptions = options.details[detailKey] || [];
 
   const showProductDropdown =
@@ -900,7 +901,7 @@ function App() {
       s10: details || "NA",
     };
 
-    console.log("Submitting these custom fields:", modifiedCustomFields);
+    console.log("Submitting these custom fields new:", modifiedCustomFields);
 
     if (yAppWidgetRef.current) {
       try {
