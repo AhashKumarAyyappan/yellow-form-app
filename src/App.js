@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { YAppWidget } from "@yellow/yapps/dist/widget.js"
 import "./App.css";
 function App() {
   const [yAppWidget, setYAppWidget] = useState(null);
