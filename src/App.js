@@ -851,7 +851,7 @@ function App() {
 
         try {
           const data = await widget.ask("ask_ticket_cf_info");
-          console.log("Fetched ticket info:", data);
+          console.log("Fetched ticket info now:", data);
 
           const customFields =
             data?.eventResponse?.eventData?.customFields || {};
