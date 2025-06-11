@@ -864,32 +864,85 @@ function App() {
 
   //   loadScriptAndFetch();
   // }, []);
+  // useEffect(() => {
+  //   const loadWidgetAndFetchData = async () => {
+  //     try {
+  //       const { YAppWidget } = await import(
+  //         "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js"
+  //       );
+  
+  //       const widget = new YAppWidget();
+  //       yAppWidgetRef.current = widget;
+  
+  //       const data = await widget.ask("ask_ticket_cf_info");
+  //       console.log("Fetched ticket info:", data);
+  
+  //       const customFields = data?.eventResponse?.eventData?.customFields || {};
+  
+  //       setOptions({
+  //         ticketTypes: customFields.ticketTypes || [],
+  //         productsByTicketType: customFields.productsByTicketType || {},
+  //         classificationsByProduct: customFields.classificationsByProduct || {},
+  //         subClassifications: customFields.subClassifications || {},
+  //         details: customFields.details || {},
+  //       });
+  
+  //     } catch (err) {
+  //       console.error("Error loading or fetching from Yellow.ai widget:", err);
+  //     }
+  //   };
+  
+  //   loadWidgetAndFetchData();
+  // }, []);
   useEffect(() => {
-    const loadWidgetAndFetchData = async () => {
-      try {
-        const { YAppWidget } = await import(
-          "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js"
-        );
-  
-        const widget = new YAppWidget();
-        yAppWidgetRef.current = widget;
-  
-        const data = await widget.ask("ask_ticket_cf_info");
-        console.log("Fetched ticket info:", data);
-  
-        const customFields = data?.eventResponse?.eventData?.customFields || {};
-  
-        setOptions({
-          ticketTypes: customFields.ticketTypes || [],
-          productsByTicketType: customFields.productsByTicketType || {},
-          classificationsByProduct: customFields.classificationsByProduct || {},
-          subClassifications: customFields.subClassifications || {},
-          details: customFields.details || {},
+    const loadWidgetAndFetchData = () => {
+      // Load the Yellow.ai widget as a module script
+      const script = document.createElement("script");
+      script.type = "module";
+      script.innerHTML = `
+        import { YAppWidget } from "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+        window.YellowAppWidgetInstance = new YAppWidget();
+        window.YellowAppWidgetInstance.ask("ask_ticket_cf_info").then(data => {
+          window.YellowAppWidgetData = data;
+        }).catch(err => {
+          console.error("Widget ask error:", err);
+          window.YellowAppWidgetError = err;
         });
+      `;
+      document.body.appendChild(script);
   
-      } catch (err) {
-        console.error("Error loading or fetching from Yellow.ai widget:", err);
-      }
+      // Poll every 500ms for the fetched data
+      const interval = setInterval(() => {
+        if (window.YellowAppWidgetData) {
+          const data = window.YellowAppWidgetData;
+          const customFields = data?.eventResponse?.eventData?.customFields || {};
+  
+          setOptions({
+            ticketTypes: customFields.ticketTypes || [],
+            productsByTicketType: customFields.productsByTicketType || {},
+            classificationsByProduct: customFields.classificationsByProduct || {},
+            subClassifications: customFields.subClassifications || {},
+            details: customFields.details || {},
+          });
+  
+          yAppWidgetRef.current = window.YellowAppWidgetInstance;
+  
+          clearInterval(interval);
+          clearTimeout(timeout);
+        }
+  
+        if (window.YellowAppWidgetError) {
+          console.error("Failed to load widget data:", window.YellowAppWidgetError);
+          clearInterval(interval);
+          clearTimeout(timeout);
+        }
+      }, 500);
+  
+      // Timeout after 10 seconds to avoid infinite loop
+      const timeout = setTimeout(() => {
+        console.error("Timed out waiting for YellowAppWidget data");
+        clearInterval(interval);
+      }, 10000);
     };
   
     loadWidgetAndFetchData();
