@@ -865,53 +865,34 @@ function App() {
   //   loadScriptAndFetch();
   // }, []);
   useEffect(() => {
-    const loadScriptAndFetch = async () => {
-      const script = document.createElement("script");
-      script.type = "text/javascript";
-      script.src = "https://cdn.yellowmessenger.com/widget/v1.0.0/yapp-sdk.min.js";
-      script.async = true;
+    const loadWidgetAndFetchData = async () => {
+      try {
+        const { YAppWidget } = await import(
+          "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js"
+        );
   
-      script.onload = () => {
-        // Wait until YAppWidget is available
-        const checkInterval = setInterval(() => {
-          if (window.YAppWidget) {
-            clearInterval(checkInterval);
+        const widget = new YAppWidget();
+        yAppWidgetRef.current = widget;
   
-            try {
-              const widget = new window.YAppWidget();
-              yAppWidgetRef.current = widget;
+        const data = await widget.ask("ask_ticket_cf_info");
+        console.log("Fetched ticket info:", data);
   
-              widget.ask("ask_ticket_cf_info")
-                .then((data) => {
-                  console.log("Fetched ticket info:", data);
-                  const customFields = data?.eventResponse?.eventData?.customFields || {};
+        const customFields = data?.eventResponse?.eventData?.customFields || {};
   
-                  setOptions({
-                    ticketTypes: customFields.ticketTypes || [],
-                    productsByTicketType: customFields.productsByTicketType || {},
-                    classificationsByProduct: customFields.classificationsByProduct || {},
-                    subClassifications: customFields.subClassifications || {},
-                    details: customFields.details || {},
-                  });
-                })
-                .catch((error) => {
-                  console.error("Error fetching ticket info:", error);
-                });
-            } catch (err) {
-              console.error("Failed to instantiate YAppWidget", err);
-            }
-          }
-        }, 100); // check every 100ms
-      };
+        setOptions({
+          ticketTypes: customFields.ticketTypes || [],
+          productsByTicketType: customFields.productsByTicketType || {},
+          classificationsByProduct: customFields.classificationsByProduct || {},
+          subClassifications: customFields.subClassifications || {},
+          details: customFields.details || {},
+        });
   
-      script.onerror = () => {
-        console.error("Failed to load Yellow.ai widget script.");
-      };
-  
-      document.body.appendChild(script);
+      } catch (err) {
+        console.error("Error loading or fetching from Yellow.ai widget:", err);
+      }
     };
   
-    loadScriptAndFetch();
+    loadWidgetAndFetchData();
   }, []);
 
   const productOptions =
