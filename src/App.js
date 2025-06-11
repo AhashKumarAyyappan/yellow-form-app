@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { YAppWidget } from "@yellow/yapps/dist/widget.js"
-import "./App.css";
+import { useEffect, useRef, useState } from "react";
+
 function App() {
-  const [yAppWidget, setYAppWidget] = useState(null);
+  const yAppWidgetRef = useRef(null);
+
   const [options, setOptions] = useState({
     ticketTypes: [
       "Product",
@@ -817,98 +817,127 @@ function App() {
       Product_Shipsy_Configuration_Role: ["New", "Role Change"],
     },
   });
+
   const [ticketType, setTicketType] = useState("");
   const [product, setProduct] = useState("");
   const [classification, setClassification] = useState("");
   const [subClassification, setSubClassification] = useState("");
   const [details, setDetails] = useState("");
 
+  // Load Yellow Messenger widget script and fetch ticket info
   useEffect(() => {
-    const initWidget = async () => {
-      try {
-        if (!window.YAppWidget) {
-          console.error("Yellow.ai widget not found. Are you running inside Yellow.ai?");
-          return;
+    const loadScriptAndFetch = async () => {
+      const script = document.createElement("script");
+      script.type = "text/javascript";
+      script.src = "https://cdn.yellowmessenger.com/yapps-sdk/v1.0.0/widget.js";
+      script.async = true;
+
+      script.onload = async () => {
+        const { YAppWidget } = window;
+        const widget = new YAppWidget();
+        yAppWidgetRef.current = widget;
+
+        try {
+          const data = await widget.ask("ask_ticket_cf_info");
+          console.log("Fetched ticket info:", data);
+
+          const customFields =
+            data?.eventResponse?.eventData?.customFields || {};
+
+          // Assume this is how the structure comes — you may need to modify this structure to match actual payload
+          setOptions({
+            ticketTypes: customFields.ticketTypes || [],
+            productsByTicketType: customFields.productsByTicketType || {},
+            classificationsByProduct:
+              customFields.classificationsByProduct || {},
+            subClassifications: customFields.subClassifications || {},
+            details: customFields.details || {},
+          });
+        } catch (error) {
+          console.error("Error fetching ticket info:", error);
         }
+      };
 
-        const widget = new window.YAppWidget();
-        setYAppWidget(widget);
-
-        const response = await widget.ask("ask_ticket_cf_info");
-        const customFields = response?.eventResponse?.eventData?.customFields || {};
-
-        setOptions({
-          ticketTypes: customFields.ticketTypes || [],
-          productsByTicketType: customFields.productsByTicketType || {},
-          classificationsByProduct: customFields.classificationsByProduct || {},
-          subClassifications: customFields.subClassifications || {},
-          details: customFields.details || {}
-        });
-
-        console.log("Custom Fields Loaded:", customFields);
-      } catch (err) {
-        console.error("Error initializing widget:", err);
-      }
+      document.body.appendChild(script);
     };
 
-    initWidget();
+    loadScriptAndFetch();
   }, []);
+
+  const productOptions =
+    ticketType && ticketType !== "LoadPlan"
+      ? options.productsByTicketType[ticketType] || []
+      : [];
+
+  const classificationOptions =
+    ticketType === "LoadPlan"
+      ? options.classificationsByProduct["LoadPlan"]
+      : product
+      ? options.classificationsByProduct[product] || []
+      : [];
+
+  const subClassificationKey = ${ticketType}_${product}_${classification};
+  const subClassificationOptions =
+    options.subClassifications[subClassificationKey] || [];
+
+  const detailKey = ${ticketType}_${product}_${classification}_${subClassification};
+  const detailOptions = options.details[detailKey] || [];
+
+  const showProductDropdown =
+    ticketType && ticketType !== "LoadPlan" && productOptions.length > 0;
+  const showClassificationDropdown = classificationOptions.length > 0;
+  const showSubClassificationDropdown = subClassificationOptions.length > 0;
+  const showDetailsDropdown = detailOptions.length > 0;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const payload = {
+    const modifiedCustomFields = {
       s6: ticketType || "NA",
       s7: product || "NA",
       s8: classification || "NA",
       s9: subClassification || "NA",
-      s10: details || "NA"
+      s10: details || "NA",
     };
 
-    if (!yAppWidget) {
-      alert("Widget not loaded yet.");
-      return;
-    }
+    console.log("Submitting these custom fields:", modifiedCustomFields);
 
-    try {
-      await yAppWidget.update("update_custom_fields", payload);
-      alert("Custom fields updated successfully!");
-    } catch (err) {
-      console.error("Failed to update fields:", err);
-      alert("Update failed");
+    if (yAppWidgetRef.current) {
+      try {
+        const submittedData = await yAppWidgetRef.current.update(
+          "update_custom_fields",
+          modifiedCustomFields
+        );
+        console.log("Successfully updated custom fields", submittedData);
+        alert("Data successfully updated");
+      } catch (err) {
+        console.error("Update failed", err);
+        alert("Update failed");
+      }
+    } else {
+      alert("Widget not loaded yet.");
     }
   };
-
-  const productOptions = ticketType && ticketType !== "LoadPlan"
-    ? options.productsByTicketType[ticketType] || []
-    : [];
-
-  const classificationOptions = ticketType === "LoadPlan"
-    ? options.classificationsByProduct["LoadPlan"]
-    : product
-      ? options.classificationsByProduct[product] || []
-      : [];
-
-  const subClassificationKey = `${ticketType}_${product}_${classification}`;
-  const subClassificationOptions = options.subClassifications[subClassificationKey] || [];
-
-  const detailKey = `${ticketType}_${product}_${classification}_${subClassification}`;
-  const detailOptions = options.details[detailKey] || [];
 
   return (
     <div className="form-container">
       <h2>Custom Fields</h2>
       <form onSubmit={handleSubmit}>
-        <label>Ticket Type *</label>
+        {/* Ticket Type */}
+        <label htmlFor="ticketType">Ticket Type *</label>
         <select
+          id="ticketType"
           value={ticketType}
           onChange={(e) => {
             const newType = e.target.value;
             setTicketType(newType);
-            setProduct(newType === "LoadPlan" ? "LoadPlan" : "");
+            setProduct("");
             setClassification("");
             setSubClassification("");
             setDetails("");
+            if (newType === "LoadPlan") {
+              setProduct("LoadPlan");
+            }
           }}
         >
           <option value="">-- Select --</option>
@@ -919,10 +948,12 @@ function App() {
           ))}
         </select>
 
-        {ticketType && ticketType !== "LoadPlan" && productOptions.length > 0 && (
+        {/* Product */}
+        {showProductDropdown && (
           <>
-            <label>Product *</label>
+            <label htmlFor="product">Product *</label>
             <select
+              id="product"
               value={product}
               onChange={(e) => {
                 setProduct(e.target.value);
@@ -941,10 +972,12 @@ function App() {
           </>
         )}
 
-        {classificationOptions.length > 0 && (
+        {/* Classification */}
+        {showClassificationDropdown && (
           <>
-            <label>Classification *</label>
+            <label htmlFor="classification">Classification *</label>
             <select
+              id="classification"
               value={classification}
               onChange={(e) => {
                 setClassification(e.target.value);
@@ -962,10 +995,12 @@ function App() {
           </>
         )}
 
-        {subClassificationOptions.length > 0 && (
+        {/* SubClassification */}
+        {showSubClassificationDropdown && (
           <>
-            <label>Subclassification *</label>
+            <label htmlFor="subClassification">Subclassification *</label>
             <select
+              id="subClassification"
               value={subClassification}
               onChange={(e) => {
                 setSubClassification(e.target.value);
@@ -982,10 +1017,12 @@ function App() {
           </>
         )}
 
-        {detailOptions.length > 0 && (
+        {/* Details */}
+        {showDetailsDropdown && (
           <>
-            <label>Details *</label>
+            <label htmlFor="details">Details *</label>
             <select
+              id="details"
               value={details}
               onChange={(e) => setDetails(e.target.value)}
             >
